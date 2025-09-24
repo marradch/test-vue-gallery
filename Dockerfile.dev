@@ -1,0 +1,18 @@
+# Используем Node.js для разработки
+FROM node:18
+
+# Указываем рабочую директорию
+WORKDIR /app
+
+# Копируем package.json и устанавливаем зависимости
+COPY package*.json ./
+RUN npm install
+
+# Копируем весь проект
+COPY . .
+
+# Открываем порт для dev-сервера Vue
+EXPOSE 5173
+
+# Запуск Vite или Vue CLI
+CMD ["npm", "run", "dev"]
