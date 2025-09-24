@@ -1,7 +1,14 @@
 <template>
   <div>
-    <h1>Test Gallery</h1>
-    <gallery :images="images"/>
+    <h1>Main Gallery</h1>
+    <gallery
+        :images="images"
+        selectable
+        @select="onSelect"
+        @deselect="onDeselect"
+    />
+    <h1>Selected From First Gallery</h1>
+    <gallery :images="selectedImages"/>
   </div>
 </template>
 
@@ -11,6 +18,16 @@ import Gallery from '@/components/Gallery.vue'
 import type { ImageItem } from '@/types'
 
 const images = ref<ImageItem[]>([])
+const selectedImages = ref<ImageItem[]>([])
+
+const onSelect = (id: number) => {
+  const item = images.value.find(img => img.id === id)
+  if (item) selectedImages.value.push(item)
+}
+
+const onDeselect = (id: number) => {
+  selectedImages.value = selectedImages.value.filter(img => img.id !== id)
+}
 
 onMounted(async () => {
   try {
