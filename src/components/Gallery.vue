@@ -4,15 +4,15 @@
     <button v-show="hasPrev" class="nav prev" @click="prev">&#10094;</button>
 
     <div class="carousel" ref="carouselRef">
-      <div
+      <GalleryItem
           v-for="image in images"
           :key="image.id"
-          class="carousel-item"
-          @click="toggleSelect(image.id)"
-          :class="{ selected: isSelected(image.id) }"
-      >
-        <img :src="image.download_url" :alt="image.author" />
-      </div>
+          :image="image"
+          :selected-ids="localSelected"
+          :selectable="selectable"
+          @select="toggleSelect"
+          @deselect="toggleSelect"
+      />
     </div>
 
     <button v-show="hasNext" class="nav next" @click="next">&#10095;</button>
@@ -23,6 +23,7 @@
 <script setup lang="ts">
 import { defineProps, ref, computed, onMounted, onUnmounted, defineEmits, watch } from 'vue'
 import type { ImageItem } from '@/types'
+import GalleryItem from '@/components/GalleryItem.vue'
 
 const props = defineProps<{
   images: ImageItem[],
@@ -100,8 +101,6 @@ function toggleSelect(id: number) {
     emit('select', id)
   }
 }
-
-const isSelected = (id: number) => localSelected.value.includes(id)
 </script>
 
 <style scoped lang="scss">
@@ -116,39 +115,6 @@ const isSelected = (id: number) => localSelected.value.includes(id)
     display: flex;
     gap: 10px;
     overflow-x: hidden;
-  }
-
-  .carousel-item {
-    flex: 0 0 auto;
-    width: 200px;
-    height: 150px;
-    border-radius: 10px;
-    overflow: hidden;
-    transition: all 0.3s ease;
-    box-sizing: border-box;
-
-    @media (max-width: 768px) {
-      width: 100%;
-      height: 300px;
-    }
-
-    img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-
-    &.selected {
-      width: 182px;
-      height: 142px;
-      border: 4px solid rgba(255, 0, 0, 0.6);
-      border-radius: 10px;
-
-      @media (max-width: 768px) {
-        width: calc(100% - 8px);
-        height: 292px;
-      }
-    }
   }
 
   .nav {
