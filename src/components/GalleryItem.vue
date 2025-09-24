@@ -45,6 +45,11 @@ function toggleSelect() {
   transition: all 0.3s ease;
   box-sizing: border-box;
 
+  @media (max-width: 768px) {
+    width: 100%;
+    height: 300px;
+  }
+
   img {
     width: 100%;
     height: 100%;
@@ -55,6 +60,12 @@ function toggleSelect() {
     width: 182px;
     height: 142px;
     border: 4px solid rgba(255, 0, 0, 0.6);
+    border-radius: 10px;
+
+    @media (max-width: 768px) {
+      width: calc(100% - 8px);
+      height: 292px;
+    }
   }
 }
 </style>
