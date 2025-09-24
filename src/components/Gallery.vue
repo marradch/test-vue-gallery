@@ -32,6 +32,11 @@ const props = defineProps<{
 const carouselRef = ref<HTMLDivElement | null>(null)
 const currentIndex = ref(0)
 
+watch(props.images, () => {
+  currentIndex.value = 0
+  carouselRef.value.scrollLeft = 0
+})
+
 function onResize() {
   currentIndex.value = 0
   carouselRef.value.scrollLeft = 0
