@@ -43,7 +43,6 @@ watch(
       if (carouselRef.value) carouselRef.value.scrollLeft = 0
       await nextTick()
 
-      // ждём загрузки всех изображений внутри карусели (если нужно)
       const imgs = carouselRef.value?.querySelectorAll('img') ?? []
       await Promise.all(Array.from(imgs).map(img => {
         if ((img as HTMLImageElement).complete) return Promise.resolve()
@@ -82,8 +81,6 @@ function setHasPrev() {
   const items = carouselRef.value.querySelectorAll<HTMLElement>('.carousel-item')
   if (!items.length) return
 
-  console.log('detect prev', carouselRef.value.scrollLeft);
-
   hasPrevByScroll.value = carouselRef.value.scrollLeft > 0
 }
 
@@ -97,9 +94,6 @@ function setHasNext() {
   const carouselRect = carouselRef.value.getBoundingClientRect()
   const lastItemRect = lastItem.getBoundingClientRect()
 
-  console.log(lastItemRect.right, carouselRect.right)
-
-  // Если правый край последнего элемента выходит за пределы контейнера → значит есть "следующий"
   hasNextByScroll.value = lastItemRect.right > carouselRect.right
 }
 
