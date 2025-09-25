@@ -1,7 +1,7 @@
 <template>
   <div>
     <h1>Main Gallery</h1>
-    <gallery
+    <gallery v-if="images"
         :images="images"
         selectable
         @select="onSelect"

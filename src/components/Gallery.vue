@@ -21,9 +21,12 @@
 </template>
 
 <script setup lang="ts">
-import { defineProps, ref, computed, onMounted, onUnmounted, defineEmits, watch } from 'vue'
+import { defineProps, ref, computed, onMounted, onUnmounted, onBeforeUnmount, defineEmits, watch, nextTick } from 'vue'
 import type { ImageItem } from '@/types'
 import GalleryItem from '@/components/GalleryItem.vue'
+import  { useDevice } from '@/composables/useDevice'
+
+const { isMobile } = useDevice();
 
 const props = defineProps<{
   images: ImageItem[],
@@ -33,14 +36,30 @@ const props = defineProps<{
 const carouselRef = ref<HTMLDivElement | null>(null)
 const currentIndex = ref(0)
 
-watch(props.images, () => {
-  currentIndex.value = 0
-  carouselRef.value.scrollLeft = 0
-})
+watch(
+    () => props.images,
+    async () => {
+      currentIndex.value = 0
+      if (carouselRef.value) carouselRef.value.scrollLeft = 0
+      await nextTick()
+
+      // ждём загрузки всех изображений внутри карусели (если нужно)
+      const imgs = carouselRef.value?.querySelectorAll('img') ?? []
+      await Promise.all(Array.from(imgs).map(img => {
+        if ((img as HTMLImageElement).complete) return Promise.resolve()
+        return new Promise(resolve => (img as HTMLImageElement).addEventListener('load', resolve, { once: true }))
+      }))
+
+      setHasPrev()
+      setHasNext()
+    },
+    { deep: true }
+)
 
 function onResize() {
   currentIndex.value = 0
   carouselRef.value.scrollLeft = 0
+  setHasNext()
 }
 
 onMounted(() => {
@@ -51,8 +70,67 @@ onUnmounted(() => {
   window.removeEventListener('resize', onResize)
 })
 
-const hasPrev = computed(() => currentIndex.value !== 0)
-const hasNext = computed(() => currentIndex.value + 1 !== props.images.length)
+const hasPrevByScroll = ref(false);
+const hasNextByScroll = ref(true);
+
+const hasPrev = computed(() => isMobile.value ? (currentIndex.value !== 0) : hasPrevByScroll.value)
+const hasNext = computed(() => isMobile.value ? (currentIndex.value + 1 !== props.images.length) : hasNextByScroll.value)
+
+function setHasPrev() {
+  if (isMobile.value || !carouselRef.value) return
+
+  const items = carouselRef.value.querySelectorAll<HTMLElement>('.carousel-item')
+  if (!items.length) return
+
+  console.log('detect prev', carouselRef.value.scrollLeft);
+
+  hasPrevByScroll.value = carouselRef.value.scrollLeft > 0
+}
+
+function setHasNext() {
+  if (isMobile.value || !carouselRef.value) return
+
+  const items = carouselRef.value.querySelectorAll<HTMLElement>('.carousel-item')
+  if (!items.length) return
+
+  const lastItem = items[items.length - 1]
+  const carouselRect = carouselRef.value.getBoundingClientRect()
+  const lastItemRect = lastItem.getBoundingClientRect()
+
+  console.log(lastItemRect.right, carouselRect.right)
+
+  // Если правый край последнего элемента выходит за пределы контейнера → значит есть "следующий"
+  hasNextByScroll.value = lastItemRect.right > carouselRect.right
+}
+
+
+let scrollTimeout: number | null = null
+let scrollHandler: (() => void) | null = null
+
+onMounted(() => {
+  if (!carouselRef.value) return
+
+  scrollHandler = () => {
+    if (scrollTimeout) clearTimeout(scrollTimeout)
+    scrollTimeout = window.setTimeout(() => {
+      setHasPrev()
+      setHasNext()
+      scrollTimeout = null
+    }, 120)
+  }
+
+  carouselRef.value.addEventListener('scroll', scrollHandler, { passive: true })
+})
+
+onBeforeUnmount(() => {
+  if (carouselRef.value && scrollHandler) {
+    carouselRef.value.removeEventListener('scroll', scrollHandler)
+  }
+  if (scrollTimeout) {
+    clearTimeout(scrollTimeout)
+    scrollTimeout = null
+  }
+})
 
 function scrollToIndex() {
   if (!carouselRef.value) return
@@ -115,6 +193,40 @@ function toggleSelect(id: number) {
     display: flex;
     gap: 10px;
     overflow-x: hidden;
+    align-items: center;
+  }
+
+  .carousel-item {
+    flex: 0 0 auto;
+    width: 200px;
+    height: 150px;
+    border-radius: 10px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    box-sizing: border-box;
+
+    @media (max-width: 768px) {
+      width: 100%;
+      height: 300px;
+    }
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    &.selected {
+      width: 182px;
+      height: 142px;
+      border: 4px solid rgba(255, 0, 0, 0.6);
+      border-radius: 10px;
+
+      @media (max-width: 768px) {
+        width: calc(100% - 8px);
+        height: 292px;
+      }
+    }
   }
 
   .nav {
